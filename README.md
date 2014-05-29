@@ -35,7 +35,7 @@ By doing this Tea provides several things:
 
 
 ## (Temporary) Documentation
-
+```
 type Engine interface {
    CompileFile(filepath)
 }
@@ -44,3 +44,4 @@ tea.SetEngine("amber")
 tea.GetEngine()
 tea.Compile("directorypath", Options{recursive, extension, must})
 tea.Get("index")
+```
