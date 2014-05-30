@@ -1,38 +1,47 @@
 # Tea
-*Work in progress.*
+*Lots of work in progress.*
 
-Providing a simple way to use view templates in Go.
+View templating made easy for Go.
 
-Currently there are several different templating engines for Go, all with different usages. Additionally, what if you wanted to compile and cache an entire directory of view templates.
+Currently there are several different templating engines for Go, all with different usages specs, and if you want to load in multiple files or cache them you do it yourself. Let's change that.
 
 Express.js has a great way of doing this:
 
-```
-var app = express();
+```js
+// Use EJS for templates
 app.set('view engine', 'ejs');
+
+// Look in app/views/ for the files
 app.set('views', __dirname + '/app/views');
+
 app.get('/', func(res, req) {
-   res.render('index');
+   // Render index with some data
+   res.render('index', data);
 });
 ```
 
 Tea takes a similar approach:
 ```go
+// Use Amber for templates
 tea.SetEngine("amber")
-tea.Compile("templates/", options)
-tmpl, err := tea.Get("index")
-// tmpl is a *template.Template (html/template)
-// ready to be executed.
 
+// Look in templates/ for the files
+tea.Compile("templates/", options)
+
+// Get the compiled template in html/template form.
+tmpl, err := tea.Get("index")
+
+// Use it however you'd like.
 ```
 
 By doing this Tea provides several things:
    - Directory compilation (recursive)
    - Template caching
    - Cache thread safety
-   - Painless switching between templating engines
+   - Painless switch between templating engines
+   - Compilation to the standard
    - Concise syntax
-
+   - Extensible to support more engines.
 
 ## (Temporary) Documentation
 ```
