@@ -1,7 +1,17 @@
 package tea
 
+/**
+	Tea - Making Go templates easy.
+	By Vinh Tran (vqtran)
+
+	A package that compiles directories of templates for various templating
+	engines and provides a thread-safe cache and simple usage. Takes various
+	Go templating engines and compiles them to the standard html/template.
+**/
+
 import (
 	"errors"
+	"fmt"
 	"github.com/vqtran/tea/engines"
 	"html/template"
 	"os"
@@ -9,22 +19,29 @@ import (
 	"sync"
 )
 
+// Different templating engines must be support via a plugin in the engines
+// subdirectory.
 type Engine interface {
+	// Has to be able to compile from a filepath to a html/template.
 	CompileFile(filepath string) (*template.Template, error)
 }
 
 type Options struct {
-	FileExt string
+	// File extension to match when compiling directories
+	FileExt   string
+	// Whether search is recursive or only top-level
 	Recursive bool
 }
 
 var (
-	engine Engine = engines.Html
+	engine   Engine = engines.Html
 	compiled map[string]*template.Template
-	opt = Options{".html", true}
-	mutex sync.RWMutex
+	opt      = Options{".html", true}
+	mutex    sync.RWMutex
 )
 
+// Set what engine to use during compilation with a string.
+// Also sets a default extension
 func SetEngine(en string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -42,21 +59,39 @@ func SetEngine(en string) error {
 	return nil
 }
 
+// Read-locked way to get the underlying tea-plugin for the engine.
+// Makes it easy if user wants to compile a single file.
 func GetEngine() *Engine {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return &engine
 }
 
+// Compile an entire directory with options.
 func Compile(dirpath string, options Options) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	var err error
-	compiled, err = compile(dirpath, options)
+	// compile to temp first to avoid unecessary locking
+	c, err := compile(dirpath, options)
+	if err == nil {
+		mutex.Lock()
+		compiled = c
+		mutex.Unlock()
+	}
 	return err
 }
 
+// Same as Compile except will panic if there is an error
+func MustCompile(dirpath string, options Options) {
+	err := Compile(dirpath, options)
+	if err != nil {
+		panic(fmt.Sprintf("Tea Error: %s", err.Error()))
+	}
+}
+
+// Private function used to walk and compile directories
+// Searches directory path for matching extensions and compiles them
+// using the engine, and stores in map.
+// The key stored in map is the path from the original dirpath to the template,
+// with the extension stripped.
 func compile(dirpath string, opt Options) (map[string]*template.Template, error) {
 	dir, err := os.Open(dirpath)
 	if err != nil {
@@ -96,7 +131,7 @@ func compile(dirpath string, opt Options) (map[string]*template.Template, error)
 				return nil, err
 			}
 			// Strip extension
-			key := filename[0:len(filename)-len(fileext)]
+			key := filename[0 : len(filename)-len(fileext)]
 			cmpl[key] = tmpl
 		}
 	}
@@ -104,21 +139,31 @@ func compile(dirpath string, opt Options) (map[string]*template.Template, error)
 	return cmpl, nil
 }
 
+// Thread-safe get the template. Second return variable states whether
+// or not key is in the map.
 func Get(key string) (*template.Template, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	t , ok := compiled[key]
+	t, ok := compiled[key]
 	return t, ok
 }
 
+// Delete a specific key/value from the map.
 func Delete(key string) {
 	mutex.Lock()
 	delete(compiled, key)
-   mutex.Unlock()
+	mutex.Unlock()
 }
 
+// Clear the entire cache of templates.
 func Clear() {
 	mutex.Lock()
 	compiled = make(map[string]*template.Template)
 	mutex.Unlock()
+}
+
+func GetCache() map[string]*template.Template {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return compiled
 }

@@ -4,7 +4,7 @@ import (
 	"html/template"
 )
 
-type html struct {}
+type html struct{}
 
 func (h html) CompileFile(filepath string) (*template.Template, error) {
 	return nil, nil
