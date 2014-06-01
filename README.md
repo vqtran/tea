@@ -21,13 +21,12 @@ app.get('/', func(res, req) {
    res.render('index', data);
 });
 ```
-
 Tea takes a similar approach:
 ```go
 // Use Amber for templates
 tea.SetEngine("amber")
 
-// Look in templates/ for the files
+// Look in templates/ for the files ending in .amber, with recursive search on.
 tea.MustCompile("templates/", tea.Options{".amber", true})
 
 http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -51,12 +50,12 @@ By doing this Tea provides several things:
 See example and documentation for more detailed usage.
 
 ## Supported Templating Engines
-[html/template](http://golang.org/pkg/html/template/)
+[html/template](http://golang.org/pkg/html/template/):
 ```go
 tea.SetEngine("html")
 ```
 
-[amber](https://github.com/eknkc/amber)
+[amber](https://github.com/eknkc/amber):
 ```go
 tea.SetEngine("amber")
 ```
@@ -67,6 +66,7 @@ More to come!
 Plugins can be powerful. For example, Tea's implementation of the Go html/template plugin supports an "include" function/macro.
 
 Before to use layouts you would do something like:
+
 base.html
 ```html
 <html>
@@ -104,7 +104,7 @@ content.html
 {{ include "base.html" }}
 ```
 
-And Tea's compilation will then take care of it! Beyond layouts this can be used for partials, anything where you want to include the contents of another file.
+And Tea's compilation will then take care of it! Although this is less obvious that its a layout (versus normally stating at the top), this does make it clearer as to what the code is doing - and can be used for partials, anything where you want to include the contents of another file.
 
 *NOTE: The macro right now is not recursive, being if the file you're including contains an include, it will fail. This prevents cycles, but if this is something that you think is very important then please post an issue and I'll look into it.*
 
@@ -122,35 +122,51 @@ package tea
 ### Functions
 
 #### func Clear
-```func Clear()```
+```
+func Clear()
+```
 Clear the entire cache of templates.
 
 #### func Compile
-```func Compile(dirpath string, options Options) error```
+```
+func Compile(dirpath string, options Options) error
+```
 Compile an entire directory with options.
 
 #### func Delete
-```func Delete(key string)```
+```
+func Delete(key string)
+```
 Delete a specific key/value from the map.
 
 #### func Get
-```func Get(key string) (*template.Template, bool)```
+```
+func Get(key string) (*template.Template, bool)
+```
 Thread-safe get the template. Second return variable states whether or not key is in the map.
 
 #### func GetCache
-```func GetCache() map[string]*template.Template```
+```
+func GetCache() map[string]*template.Template
+```
 Get the underlying hashmap for the cache.
 
 #### func GetEngine
-```func getEngine() *Engine```
+```
+func getEngine() *Engine
+```
 Read-locked way to get the underlying tea-plugin for the engine. Useful for if user needs to compile a single file.
 
 #### func MustCompile
-```func MustCompile(dirpath string, options Options)```
+```
+func MustCompile(dirpath string, options Options)
+```
 Same as Compile except will panic if there is an error
 
 #### func SetEngine
-```func SetEngine(en string) error```
+```
+func SetEngine(en string) error
+```
 Set what engine to use during compilation with a string. Also sets a default extension
 
 ### Types
