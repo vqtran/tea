@@ -3,24 +3,25 @@ package main
 import (
 	"github.com/vqtran/tea"
 	"net/http"
+	"log"
 )
 
 func main() {
-	tea.MustCompile("templates/html", tea.Options{".html", true})
+	// Mess around with these settings, and see that all you have to change
+	// is what engine you're using and where to look!
+	tea.SetEngine("amber")
+	tea.MustCompile("templates/amber", tea.Options{".amber", true})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, ok := tea.Get("index")
-		if ok {
-			data := map[string]string{"Name" : "World"}
-			tmpl.Execute(w, data)
+		data := map[string]string{"Name" : "World"}
+		err := tea.Render(w, "index", data)
+		if err != nil {
+			log.Fatal(err)
 		}
 	})
 
 	http.HandleFunc("/layout", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, ok := tea.Get("index")
-		if ok {
-			tmpl.Execute(w, nil)
-		}
+		tea.Render(w, "layouts/layout", nil)
 	})
 
 	http.ListenAndServe(":8080", nil)

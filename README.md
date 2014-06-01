@@ -30,10 +30,10 @@ tea.SetEngine("amber")
 tea.MustCompile("templates/", tea.Options{".amber", true})
 
 http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-   // Get the compiled template in html/template form.
-   tmpl, ok := tea.Get("index")
-   if ok {
-      tmpl.Execute(w, data)
+   // Render index with some data
+   err := tea.Render(w, "index", data)
+   if err != nil {
+      // Handle error
    }
 })
 
@@ -59,6 +59,12 @@ tea.SetEngine("html")
 ```go
 tea.SetEngine("amber")
 ```
+
+[mustache](https://github.com/hoisie/mustache)*
+```go
+tea.SetEngine("mustache")
+```
+*Mustache layouts currently do not work quite yet.
 
 More to come!
 
@@ -114,7 +120,7 @@ There are tons of templating engines out there some - more than I could do quick
 Remember, after you write a plugin edit SetEngine to support it. Current implementations can be found in `engines/`.
 
 ## Documentation
-```
+```go
 package tea
     import "github.com/vqtran/tea"
 ```
@@ -122,49 +128,59 @@ package tea
 ### Functions
 
 #### func Clear
-```
+```go
 func Clear()
 ```
 Clear the entire cache of templates.
 
 #### func Compile
-```
+```go
 func Compile(dirpath string, options Options) error
 ```
 Compile an entire directory with options.
 
 #### func Delete
-```
+```go
 func Delete(key string)
 ```
 Delete a specific key/value from the map.
 
 #### func Get
+```go
+func Get(key string) (interface{}, bool)
 ```
-func Get(key string) (*template.Template, bool)
-```
-Thread-safe get the template. Second return variable states whether or not key is in the map.
+Thread-safe get the template. Second return variable states whether or not key is in the map. Note that you will have to cast the template to use it. This can bee seen done in the implementation for the engines.
+
+The lookup key is the path to the template relative to your specified templates directory without the extension. Therefore if you specified to look in "templates/" and in it you have "index.html" and "dir/example.html" you would access them with "index" and "dir/example" respectively.
 
 #### func GetCache
-```
-func GetCache() map[string]*template.Template
+```go
+func GetCache() map[string]interface{}
 ```
 Get the underlying hashmap for the cache.
 
 #### func GetEngine
-```
+```go
 func getEngine() *Engine
 ```
 Read-locked way to get the underlying tea-plugin for the engine. Useful for if user needs to compile a single file.
 
 #### func MustCompile
-```
+```go
 func MustCompile(dirpath string, options Options)
 ```
 Same as Compile except will panic if there is an error
 
-#### func SetEngine
+#### func Render
+```go
+func Render(buf io.Writer, key string, data interface{}) error
 ```
+Writes the rendered page with data to the io.Writer.
+
+The lookup key is the path to the template relative to your specified templates directory without the extension. Therefore if you specified to look in "templates/" and in it you have "index.html" and "dir/example.html" you would access them with "index" and "dir/example" respectively.
+
+#### func SetEngine
+```go
 func SetEngine(en string) error
 ```
 Set what engine to use during compilation with a string. Also sets a default extension
@@ -173,8 +189,10 @@ Set what engine to use during compilation with a string. Also sets a default ext
 
 ```go
 type Engine interface {
-    // Has to be able to compile from a filepath to a html/template.
+    // Has to be able to compile from a filepath
     CompileFile(filepath string) (*template.Template, error)
+   // Function to render templates (does the casting)
+   Render(buf io.Writer, tmpl interface{}, data interface{}) error
 }
 ```
 Different templating engines must be support via a plugin in the engines subdirectory.

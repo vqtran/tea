@@ -5,25 +5,27 @@ package tea
 	By Vinh Tran (vqtran)
 
 	A package that compiles directories of templates for various templating
-	engines and provides a thread-safe cache and simple usage. Takes various
-	Go templating engines and compiles them to the standard html/template.
+	engines and provides a thread-safe cache and simple usage.
 **/
 
 import (
 	"errors"
 	"fmt"
 	"github.com/vqtran/tea/engines"
-	"html/template"
+	"io"
 	"os"
 	"path"
+	"strings"
 	"sync"
 )
 
 // Different templating engines must be support via a plugin in the engines
 // subdirectory.
 type Engine interface {
-	// Has to be able to compile from a filepath to a html/template.
-	CompileFile(filepath string) (*template.Template, error)
+	// Has to be able to compile a single file from its path
+	CompileFile(filepath string) (interface{}, error)
+	// Function to render templates (does the casting)
+	Render(buf io.Writer, tmpl interface{}, data interface{}) error
 }
 
 type Options struct {
@@ -35,7 +37,7 @@ type Options struct {
 
 var (
 	engine   Engine = engines.Html
-	compiled map[string]*template.Template
+	compiled map[string]interface{}
 	opt      = Options{".html", true}
 	mutex    sync.RWMutex
 )
@@ -52,6 +54,9 @@ func SetEngine(en string) error {
 	} else if en == "amber" {
 		engine = engines.Amber
 		opt.FileExt = ".amber"
+	} else if en == "mustache" {
+		engine = engines.Mustache
+		opt.FileExt = ".html.mustache"
 	} else {
 		return errors.New("Tea Error: Engine not supported.")
 	}
@@ -92,7 +97,7 @@ func MustCompile(dirpath string, options Options) {
 // using the engine, and stores in map.
 // The key stored in map is the path from the original dirpath to the template,
 // with the extension stripped.
-func compile(dirpath string, opt Options) (map[string]*template.Template, error) {
+func compile(dirpath string, opt Options) (map[string]interface{}, error) {
 	dir, err := os.Open(dirpath)
 	if err != nil {
 		return nil, err
@@ -104,11 +109,11 @@ func compile(dirpath string, opt Options) (map[string]*template.Template, error)
 		return nil, err
 	}
 
-	cmpl := make(map[string]*template.Template)
+	cmpl := make(map[string]interface{})
 	for _, file := range files {
 		// filename is for example "index.amber"
 		filename := file.Name()
-		fileext := path.Ext(filename)
+		fileext := ext(filename)
 
 		// If recursive is true and there's a subdirectory, recurse
 		if opt.Recursive && file.IsDir() {
@@ -139,9 +144,25 @@ func compile(dirpath string, opt Options) (map[string]*template.Template, error)
 	return cmpl, nil
 }
 
+// Used over path.Ext because this takes everything after the first period.
+func ext(filename string) string {
+	splitted := strings.SplitN(filename, ".", 2)
+	return "." + splitted[len(splitted)-1]
+}
+
+// Writes the compiled template with data to the buffer.
+func Render(buf io.Writer, key string, data interface{}) error {
+	tmpl, ok := Get(key)
+	if ok {
+		// Delegate to the engine's implementation.
+		return engine.Render(buf, tmpl, data)
+	}
+	return errors.New("Tea Error: Could not render template " + key)
+}
+
 // Thread-safe get the template. Second return variable states whether
 // or not key is in the map.
-func Get(key string) (*template.Template, bool) {
+func Get(key string) (interface{}, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	t, ok := compiled[key]
@@ -158,11 +179,11 @@ func Delete(key string) {
 // Clear the entire cache of templates.
 func Clear() {
 	mutex.Lock()
-	compiled = make(map[string]*template.Template)
+	compiled = make(map[string]interface{})
 	mutex.Unlock()
 }
 
-func GetCache() map[string]*template.Template {
+func GetCache() map[string]interface{} {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	return compiled

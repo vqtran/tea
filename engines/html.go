@@ -10,6 +10,7 @@ package engines
 import (
 	"bufio"
 	"html/template"
+	"io"
 	"os"
 	"path"
 	"regexp"
@@ -18,7 +19,7 @@ import (
 
 type html struct{}
 
-func (h html) CompileFile(filepath string) (*template.Template, error) {
+func (h html) CompileFile(filepath string) (interface{}, error) {
 	// Read the original file into string
 	file, err := readFile(filepath)
 	if err != nil {
@@ -31,6 +32,10 @@ func (h html) CompileFile(filepath string) (*template.Template, error) {
 	}
 	// Parse the string into an html/template.
 	return template.New(filepath).Parse(included)
+}
+
+func (h html) Render(buf io.Writer, tmpl interface{}, data interface{}) error {
+	return tmpl.(*template.Template).Execute(buf, data)
 }
 
 var Html = html{}
