@@ -28,7 +28,7 @@ type Engine interface {
 
 type Options struct {
 	// File extension to match when compiling directories
-	FileExt   string
+	FileExt string
 	// Whether search is recursive or only top-level
 	Recursive bool
 }

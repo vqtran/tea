@@ -47,14 +47,55 @@ By doing this Tea provides several things:
    - Concise syntax
    - Extensible to support more engines.
 
-## (Temporary) Documentation
+## Documentation
 ```
-type Engine interface {
-   CompileFile(filepath)
-}
+package tea
+    import "github.com/vqtran/tea"
+```
 
-tea.SetEngine("amber")
-tea.GetEngine()
-tea.Compile("directorypath", Options{recursive, extension, must})
-tea.Get("index")
+### FUNCTIONS
+
+#### func Clear()
+    Clear the entire cache of templates.
+
+#### func Compile(dirpath string, options Options) error
+    Compile an entire directory with options.
+
+#### func Delete(key string)
+    Delete a specific key/value from the map.
+
+#### func Get(key string) (*template.Template, bool)
+    Thread-safe get the template. Second return variable states whether or
+    not key is in the map.
+
+#### func GetCache() map[string]*template.Template
+
+#### func MustCompile(dirpath string, options Options)
+    Same as Compile except will panic if there is an error
+
+#### func SetEngine(en string) error
+    Set what engine to use during compilation with a string. Also sets a
+    default extension
+
+### TYPES
+
+```go
+type Engine interface {
+    // Has to be able to compile from a filepath to a html/template.
+    CompileFile(filepath string) (*template.Template, error)
+}
 ```
+    Different templating engines must be support via a plugin in the engines
+    subdirectory.
+
+
+#### func GetEngine() *Engine
+    Read-locked way to get the underlying tea-plugin for the engine. Makes
+    it easy if user wants to compile a single file.
+
+#### type Options struct {
+    // File extension to match when compiling directories
+    FileExt string
+    // Whether search is recursive or only top-level
+    Recursive bool
+}

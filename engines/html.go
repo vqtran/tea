@@ -37,21 +37,21 @@ var Html = html{}
 
 // Reads a file into a string in memory
 func readFile(path string) (string, error) {
-  file, err := os.Open(path)
-  if err != nil {
-    return "", err
-  }
-  defer file.Close()
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
 
-  contents := ""
-  scanner := bufio.NewScanner(file)
-  for scanner.Scan() {
-	  text := scanner.Text()
-	  if text != "" {
-		  contents += text + "\n"
-	  }
-  }
-  return contents, scanner.Err()
+	contents := ""
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if text != "" {
+			contents += text + "\n"
+		}
+	}
+	return contents, scanner.Err()
 }
 
 // Finds all the includes and replaces their include statement with the
@@ -116,14 +116,14 @@ func getIncludes(s string) []string {
 // Credit to Stack Overflow:
 // http://stackoverflow.com/questions/4466091/split-string-using-regular-expression-in-go
 func regSplit(text string, delimeter string) []string {
-    reg := regexp.MustCompile(delimeter)
-    indexes := reg.FindAllStringIndex(text, -1)
-    laststart := 0
-    result := make([]string, len(indexes) + 1)
-    for i, element := range indexes {
-            result[i] = text[laststart:element[0]]
-            laststart = element[1]
-    }
-    result[len(indexes)] = text[laststart:len(text)]
-    return result
+	reg := regexp.MustCompile(delimeter)
+	indexes := reg.FindAllStringIndex(text, -1)
+	laststart := 0
+	result := make([]string, len(indexes)+1)
+	for i, element := range indexes {
+		result[i] = text[laststart:element[0]]
+		laststart = element[1]
+	}
+	result[len(indexes)] = text[laststart:len(text)]
+	return result
 }
