@@ -1,5 +1,5 @@
 # Tea
-*Lots of work in progress.*
+*Work in progress.*
 
 Making Go templates easy.
 
@@ -37,6 +37,7 @@ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
       tmpl.Execute(w, data)
    }
 })
+
 ```
 
 By doing this Tea provides several things:
@@ -47,37 +48,112 @@ By doing this Tea provides several things:
    - Concise syntax
    - Extensible to support more engines.
 
+See example and documentation for more detailed usage.
+
+## Supported Templating Engines
+[html/template](http://golang.org/pkg/html/template/)
+```go
+tea.SetEngine("html")
+```
+
+[amber](https://github.com/eknkc/amber)
+```go
+tea.SetEngine("amber")
+```
+
+More to come!
+
+## There's More
+Plugins can be powerful. For example, Tea's implementation of the Go html/template plugin supports an "include" function/macro.
+
+Before to use layouts you would do something like:
+base.html
+```html
+<html>
+   <head>
+      <title>Hello World</title>
+   </head>
+   <body>
+      {{ template "content" . }}
+   </body>
+</html>
+
+```
+
+content.html
+```html
+{{ define "content" }}
+<h1>Hello World</h1>
+<h2>Tea will knock your socks off.</h2>
+{{ end }}
+```
+
+And you would parse it using.
+```go
+tmpl := template.Must(template.ParseFiles("content.html", "base.html"))
+```
+
+However, with Tea, writing `{{ include "file.html" }}` replaces that statement with the contents of file.html. So you can do:
+
+content.html
+```html
+{{ define "content" }}
+<h1>Hello World</h1>
+<h2>Tea will knock your socks off.</h2>
+{{ end }}
+{{ include "base.html" }}
+```
+
+And Tea's compilation will then take care of it! Beyond layouts this can be used for partials, anything where you want to include the contents of another file.
+
+*NOTE: The macro right now is not recursive, being if the file you're including contains an include, it will fail. This prevents cycles, but if this is something that you think is very important then please post an issue and I'll look into it.*
+
+## Contributing
+There are tons of templating engines out there some - more than I could do quickly by myself. Write an engine plugin, test it, and send a pull request!
+
+Remember, after you write a plugin edit SetEngine to support it. Current implementations can be found in `engines/`.
+
 ## Documentation
 ```
 package tea
     import "github.com/vqtran/tea"
 ```
 
-### FUNCTIONS
+### Functions
 
-#### func Clear()
-    Clear the entire cache of templates.
+#### func Clear
+```func Clear()```
+Clear the entire cache of templates.
 
-#### func Compile(dirpath string, options Options) error
-    Compile an entire directory with options.
+#### func Compile
+```func Compile(dirpath string, options Options) error```
+Compile an entire directory with options.
 
-#### func Delete(key string)
-    Delete a specific key/value from the map.
+#### func Delete
+```func Delete(key string)```
+Delete a specific key/value from the map.
 
-#### func Get(key string) (*template.Template, bool)
-    Thread-safe get the template. Second return variable states whether or
-    not key is in the map.
+#### func Get
+```func Get(key string) (*template.Template, bool)```
+Thread-safe get the template. Second return variable states whether or not key is in the map.
 
-#### func GetCache() map[string]*template.Template
+#### func GetCache
+```func GetCache() map[string]*template.Template```
+Get the underlying hashmap for the cache.
 
-#### func MustCompile(dirpath string, options Options)
-    Same as Compile except will panic if there is an error
+#### func GetEngine
+```func getEngine() *Engine```
+Read-locked way to get the underlying tea-plugin for the engine. Useful for if user needs to compile a single file.
 
-#### func SetEngine(en string) error
-    Set what engine to use during compilation with a string. Also sets a
-    default extension
+#### func MustCompile
+```func MustCompile(dirpath string, options Options)```
+Same as Compile except will panic if there is an error
 
-### TYPES
+#### func SetEngine
+```func SetEngine(en string) error```
+Set what engine to use during compilation with a string. Also sets a default extension
+
+### Types
 
 ```go
 type Engine interface {
@@ -85,17 +161,13 @@ type Engine interface {
     CompileFile(filepath string) (*template.Template, error)
 }
 ```
-    Different templating engines must be support via a plugin in the engines
-    subdirectory.
+Different templating engines must be support via a plugin in the engines subdirectory.
 
-
-#### func GetEngine() *Engine
-    Read-locked way to get the underlying tea-plugin for the engine. Makes
-    it easy if user wants to compile a single file.
-
-#### type Options struct {
+```go
+type Options struct {
     // File extension to match when compiling directories
     FileExt string
     // Whether search is recursive or only top-level
     Recursive bool
 }
+```
