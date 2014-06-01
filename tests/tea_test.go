@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/vqtran/tea"
 	"github.com/vqtran/tea/engines"
+	"html/template"
 	"testing"
 )
 
@@ -66,15 +67,15 @@ func Test_CompileAndGet(t *testing.T) {
 
 	// Make sure file parsing is the same
 	var doc1, doc4 bytes.Buffer
-	val1.Execute(&doc1, nil)
-	val4.Execute(&doc4, nil)
+	val1.(*template.Template).Execute(&doc1, nil)
+	val4.(*template.Template).Execute(&doc4, nil)
 	if doc1.String() != doc4.String() {
 		t.Fatal("Compiled files do not match when they should.")
 	}
 
 	var doc2, doc3 bytes.Buffer
-	val2.Execute(&doc2, nil)
-	val3.Execute(&doc3, nil)
+	val2.(*template.Template).Execute(&doc2, nil)
+	val3.(*template.Template).Execute(&doc3, nil)
 	if doc2.String() != doc3.String() {
 		t.Fatal("Compiled files do not match when they should.")
 	}
@@ -85,7 +86,7 @@ func Test_CompileAndGet(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	var doc5 bytes.Buffer
-	compilefile.Execute(&doc5, nil)
+	compilefile.(*template.Template).Execute(&doc5, nil)
 	if doc1.String() != doc5.String() || doc4.String() != doc5.String() {
 		t.Fatal("Compiled templates do not much engine's CompileFile result.")
 	}
