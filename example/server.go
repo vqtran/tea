@@ -6,8 +6,7 @@ import (
 )
 
 func main() {
-	tea.SetEngine("amber")
-	tea.MustCompile("templates/", tea.Options{".amber", true})
+	tea.MustCompile("templates/html", tea.Options{".html", true})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl, ok := tea.Get("index")
@@ -18,7 +17,7 @@ func main() {
 	})
 
 	http.HandleFunc("/layout", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, ok := tea.Get("layouts/layout")
+		tmpl, ok := tea.Get("index")
 		if ok {
 			tmpl.Execute(w, nil)
 		}
