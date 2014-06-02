@@ -1,6 +1,11 @@
 package test
 
+/**
+	This tests basic Tea functionality as well as Amber's compilation.
+**/
+
 import (
+	"bufio"
 	"bytes"
 	"github.com/vqtran/tea"
 	"github.com/vqtran/tea/engines"
@@ -130,5 +135,28 @@ func Test_Nonrecursive(t *testing.T) {
 	val2, ok2 := tea.Get("test2")
 	if val2 == nil || !ok2 {
 		t.Fatal("Non-recursive search did not load in all files.")
+	}
+}
+
+// Test Functionality of Render
+func Test_Render(t *testing.T) {
+	err := tea.Compile("amber_templates", tea.Options{".amber", true})
+	if err != nil {
+		t.Fatal("Returned error when should not have.")
+	}
+	var b bytes.Buffer
+   writer := bufio.NewWriter(&b)
+
+	// Test for error condition
+	err = tea.Render(writer, "blah", nil)
+	if err == nil {
+		t.Fatal("Did not return error when it should have.")
+	}
+
+	// Usual condition
+	data := map[string]string{"Name":"World"}
+	err = tea.Render(writer, "test1", data)
+	if err != nil {
+		t.Fatal("Error rendering valid template.")
 	}
 }
