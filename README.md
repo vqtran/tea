@@ -1,5 +1,5 @@
 # Tea
-*Work in progress.*
+*Project discontinued, I would recommend [render](https://github.com/unrolled/render) for similar use cases.*
 
 Making Go templates easy.
 
